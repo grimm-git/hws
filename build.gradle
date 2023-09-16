@@ -1,0 +1,96 @@
+plugins {
+    id 'application'
+    id 'jacoco'
+    id 'org.openjfx.javafxplugin' version '0.0.12'
+    id 'org.beryx.jlink' version '2.25.0'
+    id 'com.palantir.git-version' version '0.15.0'
+}
+
+version gitVersion()
+description = 'HarzWasserSpiegel'
+
+repositories {
+    mavenCentral()
+}
+
+application {
+    mainClass = "hws.Launcher"
+}
+
+compileJava {
+    options.compilerArgs << '-Xlint:all'
+}
+
+compileTestJava {
+    options.compilerArgs << '-Xlint:all'
+}
+
+javafx {
+    version = "17.0.2"
+    modules = [ 'javafx.controls', 'javafx.fxml', 'javafx.web' ]
+}
+
+dependencies {
+    // Dependencies to generate a cross platform package for linux and windows
+    implementation group: 'org.openjfx', name: 'javafx-base', version: '17.0.2', classifier: 'linux'
+    implementation group: 'org.openjfx', name: 'javafx-base', version: '17.0.2', classifier: 'win'
+    compileOnly "org.openjfx:javafx-base:17:javadoc"
+    compileOnly "org.openjfx:javafx-base:17:sources"
+    implementation group: 'org.openjfx', name: 'javafx-graphics', version: '17.0.2', classifier: 'linux'
+    implementation group: 'org.openjfx', name: 'javafx-graphics', version: '17.0.2', classifier: 'win'
+    compileOnly "org.openjfx:javafx-graphics:17:javadoc"
+    compileOnly "org.openjfx:javafx-graphics:17:sources"
+    implementation group: 'org.openjfx', name: 'javafx-controls', version: '17.0.2', classifier: 'linux'
+    implementation group: 'org.openjfx', name: 'javafx-controls', version: '17.0.2', classifier: 'win'
+    compileOnly "org.openjfx:javafx-controls:17:javadoc"
+    compileOnly "org.openjfx:javafx-controls:17:sources"
+    implementation group: 'org.openjfx', name: 'javafx-fxml', version: '17.0.2', classifier: 'linux'
+    implementation group: 'org.openjfx', name: 'javafx-fxml', version: '17.0.2', classifier: 'win'
+    compileOnly "org.openjfx:javafx-fxml:17:javadoc"
+    compileOnly "org.openjfx:javafx-fxml:17:sources"
+    implementation group: 'io.github.ptc-alm', name: 'mksapi-jar', version: '4.16.7371'
+
+    testImplementation "org.testfx:testfx-junit5:4.0.16-alpha"
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.9.3'
+    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.9.3'
+    compileOnly "org.junit.jupiter:junit-jupiter-api:5.9.3:javadoc"
+    compileOnly "org.junit.jupiter:junit-jupiter-engine:5.9.3:javadoc"
+}
+
+// Apply a specific Java toolchain to ease working on different environments.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+jlink {
+    options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
+    launcher {
+        name = 'HarzWasserSpiegel'
+    }
+}
+
+distributions {
+    main {
+        distributionBaseName = 'HarzWasserSpiegel'
+        contents {
+        }
+    }
+}
+
+tasks.named('test') {
+    // Use JUnit Platform for unit tests.
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport // report is always generated after tests run
+}
+
+jacocoTestReport {
+    dependsOn test // tests are required to run before generating the report
+
+    reports {
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }   
+}
