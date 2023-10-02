@@ -50,8 +50,9 @@ public class NumberRangeConverterTest
         RangeControlSet ctrlSet = createRangeControlSet();
 
         // Data range: 3 - 98 but axis boundaries 3 - 98
-        NumberRangeConverter instance = new NumberRangeConverter(axis, dataList);
+        NumberRangeConverter instance = new NumberRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
 
         axis.setLowerBound(98);
         assertEquals(100, ctrlSet.getLowerLimit());
@@ -74,8 +75,9 @@ public class NumberRangeConverterTest
         RangeControlSet ctrlSet = createRangeControlSet();
 
         // Data range: 3 - 98 but axis boundaries 3 - 98
-        NumberRangeConverter instance = new NumberRangeConverter(axis, dataList);
+        NumberRangeConverter instance = new NumberRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
 
         axis.setUpperBound(98);
         assertEquals(100, ctrlSet.getUpperLimit());
@@ -98,8 +100,9 @@ public class NumberRangeConverterTest
         RangeControlSet ctrlSet = createRangeControlSet();
 
         // data range set: 3 - 98 but axis boundaries 3 - 98
-        NumberRangeConverter instance = new NumberRangeConverter(axis, dataList);
+        NumberRangeConverter instance = new NumberRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
 
         ctrlSet.setLowerLimit(50);
         assertEquals(50.5, axis.getLowerBound());
@@ -116,8 +119,9 @@ public class NumberRangeConverterTest
         RangeControlSet ctrlSet = createRangeControlSet();
 
         // data range set: 3 - 98 but axis boundaries 3 - 98
-        NumberRangeConverter instance = new NumberRangeConverter(axis, dataList);
+        NumberRangeConverter instance = new NumberRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
 
         ctrlSet.setUpperLimit(50);
         assertEquals(50.5, axis.getUpperBound());
@@ -134,8 +138,9 @@ public class NumberRangeConverterTest
         RangeControlSet ctrlSet = createRangeControlSet();
 
         // Data range: 3 - 98 but axis boundaries 3 - 100
-        NumberRangeConverter instance = new NumberRangeConverter(axis, dataList);
+        NumberRangeConverter instance = new NumberRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
 
         axis.setLowerBound(2);
         assertEquals(3.0, axis.getLowerBound());
@@ -155,8 +160,9 @@ public class NumberRangeConverterTest
         RangeControlSet ctrlSet = createRangeControlSet();
 
         // no data range but axis boundaries 0 - 100
-        NumberRangeConverter instance = new NumberRangeConverter(axis, dataList);
+        NumberRangeConverter instance = new NumberRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
 
         axis.setLowerBound(42);
         assertEquals(42, (int) axis.getLowerBound());
@@ -173,8 +179,9 @@ public class NumberRangeConverterTest
         RangeControlSet ctrlSet = createRangeControlSet();
 
         // data range: 13 - 13 but axis boundaries 0 - 100
-        NumberRangeConverter instance = new NumberRangeConverter(axis, dataList);
+        NumberRangeConverter instance = new NumberRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
 
         axis.setLowerBound(13);
         assertEquals(13, (int) axis.getLowerBound());

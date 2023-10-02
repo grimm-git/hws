@@ -19,8 +19,6 @@ package hws.gui.charts;
 import hws.gui.charts.skins.RangeControlSet;
 import java.util.List;
 import javafx.beans.value.ChangeListener;
-import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
 import javafx.scene.chart.ValueAxis;
 
 /**
@@ -28,44 +26,51 @@ import javafx.scene.chart.ValueAxis;
  * @author grimm
  */
 public class NumberRangeConverter
-extends RangeConverter
+extends RangeConverter<Number>
 {
     private ValueAxis<Number> axis;
     private double minRange;
     private double maxRange;
 
-    public NumberRangeConverter(ValueAxis<Number> axis, ObservableList<? extends Number> data)
+    public NumberRangeConverter(ValueAxis<Number> axis)
     {
-        super(axis, data);
+        super(axis);
         this.axis = axis;
         
-        extractRange(axis, data);
+        minRange = axis.getLowerBound();
+        maxRange = axis.getUpperBound();
+
         if (axis.isAutoRanging()) {
             axis.setAutoRanging(false);
             axis.setUpperBound(maxRange);
             axis.setLowerBound(minRange);
         }
         
-        data.addListener((ListChangeListener.Change<? extends Number> c) -> {
-                c.next();
-                for (Number value : c.getAddedSubList()) {
-                    if (value.doubleValue() < minRange)
-                        minRange = value.doubleValue();
-                    if (value.doubleValue() > maxRange)
-                        maxRange = value.doubleValue();
-                }
-                for (Number value : c.getRemoved()) {
-                    if (minRange == value.doubleValue() || maxRange == value.doubleValue()) {
-                        extractRange(axis, data);
-                        break;
-                    }
-                }
-            });
-
         axis.upperBoundProperty().addListener(axisUpperBoundlistener);
         axis.lowerBoundProperty().addListener(axisLowerBoundlistener);
     }
 
+    @Override
+    public void updateData(List<Number> list)
+    {
+        if (list.isEmpty()) {
+            minRange = axis.getLowerBound();
+            maxRange = axis.getUpperBound();
+
+        } else  {
+            minRange = Double.MAX_VALUE;
+            maxRange = -Double.MAX_VALUE;
+
+            for (Number value : list) {
+                minRange = Math.min(minRange, value.doubleValue());
+                maxRange = Math.max(maxRange, value.doubleValue());
+            }
+        }
+
+        if (minRange > axis.getLowerBound())  minRange = axis.getLowerBound();
+        if (maxRange < axis.getUpperBound())  maxRange = axis.getUpperBound();
+    }
+    
     /**
      * Establish the binding of the converter. It links the input to the output and vice versa.
      * 
@@ -87,27 +92,42 @@ extends RangeConverter
         ChangeListener<Number> upperRangeLimitlistener = (obs, oVal, nVal) -> {
                 if (areEqual(oVal, nVal)) return;
 
+                System.err.printf("%s%d UpperRangeLimit (%f / %f)\n", " ".repeat(level), level, oVal.doubleValue(), nVal.doubleValue());
+                level += 1;
+
                 Number data = percentToNumber(nVal.doubleValue());
                 axis.setUpperBound(data.doubleValue());            // calls axisUpperBoundListener
 
                 double rangeLen = calcRangeLength(axis);
                 rangeCTRL.setRangeLengthAndPosition(rangeLen); // calls rangePositionListener
+
+                level -= 1;
             };
 
         ChangeListener<Number> lowerRangeLimitlistener = (obs, oVal, nVal) -> {
                 if (areEqual(oVal, nVal)) return;
+
+                System.err.printf("%s%d LowerRangeLimit (%f / %f)\n", " ".repeat(level), level, oVal.doubleValue(), nVal.doubleValue());
+                level += 1;
 
                 Number data = percentToNumber(nVal.doubleValue());
                 axis.setLowerBound(data.doubleValue());            // calls axisLowerBoundListener
 
                 double rangeLen = calcRangeLength(axis);
                 rangeCTRL.setRangeLengthAndPosition(rangeLen); // calls rangePositionListener
+
+                level -= 1;
             };
 
         ChangeListener<Number> rangePositionlistener = (obs, oVal, nVal) -> {
                 if (areEqual(oVal, nVal)) return;
 
+                System.err.printf("%s%d RangePosition (%f / %f)\n", " ".repeat(level), level, oVal.doubleValue(), nVal.doubleValue());
+                level += 1;
+
                 rangeCTRL.moveLimits(nVal.doubleValue());   // calls lowerRangeLimitListener
+                                                                   // calls upperRangeLimitListener
+                level -= 1;
         };
 
         rangeCTRL.addUpperLimitListener(upperRangeLimitlistener);
@@ -122,26 +142,6 @@ extends RangeConverter
         return val;
     }
     
-    private void extractRange(ValueAxis<? extends Number> axis, List<? extends Number> list)
-    {
-        if (list.isEmpty()) {
-            minRange = axis.getLowerBound();
-            maxRange = axis.getUpperBound();
-
-        } else  {
-            minRange = Double.MAX_VALUE;
-            maxRange = -Double.MAX_VALUE;
-
-            for (Number value : list) {
-                minRange = Math.min(minRange, value.doubleValue());
-                maxRange = Math.max(maxRange, value.doubleValue());
-            }
-        }
-
-        if (minRange > axis.getLowerBound())  minRange = axis.getLowerBound();
-        if (maxRange < axis.getUpperBound())  maxRange = axis.getUpperBound();
-    }
-
     private double numberToPercent(Number value)
     {
         if (Math.abs(maxRange - minRange) <= 0.000001)
@@ -160,8 +160,15 @@ extends RangeConverter
     /****************************************************************************************/
     /*                              Listener definitions                                    */    
     /****************************************************************************************/
+    
+    int level = 0;
+    
+
     private final ChangeListener<Number> axisUpperBoundlistener = (obs, oVal, nVal) -> {
             if (areEqual(oVal, nVal)) return;
+
+            System.err.printf("%s%d UpperAxisBoundariy (%f / %f)\n", " ".repeat(level), level, oVal.doubleValue(), nVal.doubleValue());
+            level += 1;
 
             double percent = numberToPercent(nVal);
             double value = nVal.doubleValue();
@@ -185,10 +192,15 @@ extends RangeConverter
 
             for (RangeControlSet item : listControlSets)
                 item.setUpperLimit(percent);              // calls upperRangeLimitListener twice
+
+            level -= 1;
         };
             
     private final ChangeListener<Number> axisLowerBoundlistener = (obs, oVal, nVal) -> {
             if (areEqual(oVal, nVal)) return;
+
+            System.err.printf("%s%d LowerAxisBoundariy (%f / %f)\n", " ".repeat(level), level, oVal.doubleValue(), nVal.doubleValue());
+            level += 1;
 
             double percent = numberToPercent(axis.getLowerBound());
             double value = nVal.doubleValue();
@@ -212,5 +224,7 @@ extends RangeConverter
             
             for (RangeControlSet item : listControlSets)
                 item.setLowerLimit(percent);              // calls lowerRangeLimitListener twice
+
+            level -= 1;
         };
 }

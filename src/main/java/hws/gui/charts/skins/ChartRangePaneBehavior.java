@@ -32,13 +32,11 @@ import hws.gui.charts.LocalDateAxis;
 import hws.gui.charts.LocalDateRangeConverter;
 import hws.gui.charts.NumberRangeConverter;
 import hws.gui.charts.RangeConverter;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.chart.Axis;
 import javafx.scene.chart.CategoryAxis;
@@ -56,12 +54,14 @@ public class ChartRangePaneBehavior
 {
     private final ChartRangePane pane;
 
+    // TODO: Raw types
+    
+    @SuppressWarnings("rawtypes")
     private RangeConverter rangeConverter_X;
-    private ObservableList<?> dataValues_X;
     private final ArrayList<RangeControlSet> rangeControlSetsHorizontal = new ArrayList<>();
     
+    @SuppressWarnings("rawtypes")
     private RangeConverter rangeConverter_Y;
-    private ObservableList<?> dataValues_Y;
     private final ArrayList<RangeControlSet> rangeControlSetsVertical = new ArrayList<>();;
     
     /***************************************************************************
@@ -73,9 +73,11 @@ public class ChartRangePaneBehavior
     public ChartRangePaneBehavior(ChartRangePane pane)
     {
         this.pane = pane;
-                
+
+        createAxisConverter();
         extractChartDataValues(getChart().getData());
         pane.contentProperty().addListener(contentListener);
+        getChart().getData().addListener(dataListener);
     }
 
     public void dispose()
@@ -89,7 +91,7 @@ public class ChartRangePaneBehavior
 
     // extract the data from a chart if it changes (adding new series, etc)
     private final InvalidationListener dataListener = obs -> {
-                 extractChartDataValues(getChart().getData());
+                extractChartDataValues(getChart().getData());
             };
 
     private final ChangeListener<XYChart<?,?>> contentListener = (obs, oContent, nContent) -> {
@@ -112,56 +114,56 @@ public class ChartRangePaneBehavior
     {
         rangeControlSetsHorizontal.clear();
         rangeControlSetsHorizontal.addAll(Arrays.asList(controlSets));
+        
+        for(RangeControlSet ctrlSet : rangeControlSetsHorizontal)
+            rangeConverter_X.link(ctrlSet);
     }
 
     public void setControlSetsVertical(RangeControlSet... controlSets)
     {
         rangeControlSetsVertical.clear();
         rangeControlSetsVertical.addAll(Arrays.asList(controlSets));
-    }
-
-    @SuppressWarnings("unchecked")
-    public void createAxisConverter()
-    {
-        Axis<?> xAxis = getChart().getXAxis();
-        if (xAxis instanceof LocalDateAxis axis) {
-            rangeConverter_X = new LocalDateRangeConverter(axis, (ObservableList<LocalDate>) dataValues_X);
-        } else if (xAxis instanceof NumberAxis axis) {
-            rangeConverter_X = new NumberRangeConverter(axis, (ObservableList) dataValues_X);
-        } else if (xAxis instanceof CategoryAxis axis) {
-            rangeConverter_X = new CategoryRangeConverter(axis, (ObservableList<String>) dataValues_X);
-        } else 
-            throw new UnsupportedOperationException("Datatype for X-Axis not supported");
-        
-        for(RangeControlSet ctrlSet : rangeControlSetsHorizontal)
-            rangeConverter_X.link(ctrlSet);
-        
-        
-        Axis<?> yAxis = getChart().getYAxis();
-        if (yAxis instanceof LocalDateAxis axis) {
-            rangeConverter_Y = new LocalDateRangeConverter(axis, (ObservableList<LocalDate>) dataValues_Y);
-        } else if (yAxis instanceof NumberAxis axis) {
-            rangeConverter_Y = new NumberRangeConverter(axis, (ObservableList<Number>) dataValues_Y);
-        } else if (yAxis instanceof CategoryAxis axis) {
-           rangeConverter_Y = new CategoryRangeConverter(axis, (ObservableList<String>) dataValues_Y);
-        } else 
-            throw new UnsupportedOperationException("Datatype for Y-Axis not supported");
 
         for(RangeControlSet ctrlSet : rangeControlSetsVertical)
            rangeConverter_Y.link(ctrlSet);
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("unchecked")
+    private void createAxisConverter()
+    {
+        Axis<?> xAxis = getChart().getXAxis();
+        if (xAxis instanceof LocalDateAxis axis) {
+            rangeConverter_X = new LocalDateRangeConverter(axis);
+        } else if (xAxis instanceof NumberAxis axis) {
+            rangeConverter_X = new NumberRangeConverter(axis);
+        } else if (xAxis instanceof CategoryAxis axis) {
+            rangeConverter_X = new CategoryRangeConverter(axis);
+        } else 
+            throw new UnsupportedOperationException("Datatype for X-Axis not supported");
+        
+        Axis<?> yAxis = getChart().getYAxis();
+        if (yAxis instanceof LocalDateAxis axis) {
+            rangeConverter_Y = new LocalDateRangeConverter(axis);
+        } else if (yAxis instanceof NumberAxis axis) {
+            rangeConverter_Y = new NumberRangeConverter(axis);
+        } else if (yAxis instanceof CategoryAxis axis) {
+           rangeConverter_Y = new CategoryRangeConverter(axis);
+        } else 
+            throw new UnsupportedOperationException("Datatype for Y-Axis not supported");
+  }
+
+    @SuppressWarnings("unchecked")
     private <X,Y> void extractChartDataValues( ObservableList<? extends XYChart.Series<X,Y>> list)
     {
-        ObservableList<X> xDataValues = FXCollections.observableArrayList();
-        ObservableList<Y> yDataValues = FXCollections.observableArrayList();
+        List<X> xDataValues = new ArrayList<>();
+        List<Y> yDataValues = new ArrayList<>();
 
         for (int sIdx=0; sIdx < getSaveListSize(list); sIdx++) {
             XYChart.Series<X,Y> series = list.get(sIdx);
             for (XYChart.Data<X,Y> item : series.getData()) {
                 Object obj = item.getExtraValue();
-                if (obj != null && obj instanceof DataExtra extra) {
+                if (obj != null && obj instanceof DataExtra) {
+                    DataExtra<X,Y> extra = (DataExtra<X,Y>) obj;
                     extra.addToList_X(xDataValues);
                     extra.addToList_Y(yDataValues);
                 } else {
@@ -172,9 +174,8 @@ public class ChartRangePaneBehavior
                 }
             }        
         }
-        
-        dataValues_X = xDataValues;
-        dataValues_Y = yDataValues;
+        rangeConverter_X.updateData(xDataValues);
+        rangeConverter_Y.updateData(yDataValues);
     }
 
     private int getSaveListSize(List<?> data)

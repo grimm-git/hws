@@ -53,4 +53,19 @@ extends LocalDateAxis
     {
         return LocalDateAxis.AxisTick.YEARS;
     }
+
+    public LocalDateAxis.AxisTick getIntervalDecades()
+    {
+        return LocalDateAxis.AxisTick.DECADE;
+    }
+
+    public LocalDateAxis.AxisTick getIntervalSemicenturies()
+    {
+        return LocalDateAxis.AxisTick.SEMICENTURY;
+    }
+
+    public LocalDateAxis.AxisTick getIntervalCenturies()
+    {
+        return LocalDateAxis.AxisTick.CENTURY;
+    }
 }

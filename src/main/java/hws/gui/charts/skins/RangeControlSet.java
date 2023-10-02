@@ -77,14 +77,17 @@ public class RangeControlSet
     
     public void removeAllListeners()
     {
+        System.out.println("  - Lower limit listeners " + lowerLimitListeners.size());
         for (ChangeListener<? super Number> listener : lowerLimitListeners)
             getLowerLimitProperty().removeListener(listener);
         lowerLimitListeners.clear();
         
+        System.out.println("  - Range Position listeners " + rangePositionListeners.size());
         for (ChangeListener<? super Number> listener : rangePositionListeners)
             getRangePositionProperty().removeListener(listener);
         rangePositionListeners. clear();
         
+        System.out.println("  - Upper limit listeners " + upperLimitListeners.size());
         for (ChangeListener<? super Number> listener : upperLimitListeners)
             getUpperLimitProperty().removeListener(listener);
         upperLimitListeners.clear();
@@ -148,6 +151,21 @@ public class RangeControlSet
         setRangePosition(value);
     }
 
+    public void setRangeLengthAndPosition(double position, double length)
+    {
+        setRangeLength(length);
+        setRangePosition(position);
+    }
+
+    public void moveLimits(double position)
+    {
+        double rangeLength = range.getVisibleAmount();
+        double lowLimit = (100.0 - rangeLength)/100.0 * position;
+
+        setLowerLimit(lowLimit);             
+        setUpperLimit(lowLimit + rangeLength);
+    }
+
     /**
      * RangePosition can take values greater than 100 so that these two functions fulfill eachother: 
      * <pre>
@@ -174,14 +192,5 @@ public class RangeControlSet
         if (value < 0) value = 0;
         if (value > 100) value = 100;
         range.setVisibleAmount(value);
-    }
-
-    public void moveLimits(double position)
-    {
-        double rangeLength = range.getVisibleAmount();
-        double lowLimit = (100.0 - rangeLength)/100.0 * position;
-
-        setLowerLimit(lowLimit);             
-        setUpperLimit(lowLimit + rangeLength);
     }
 }

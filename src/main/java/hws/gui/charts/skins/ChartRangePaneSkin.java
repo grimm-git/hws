@@ -103,7 +103,6 @@ extends SkinBase<ChartRangePane>
         behavior = new ChartRangePaneBehavior(control);
         behavior.setControlSetsHorizontal(rangeControlSetTop, rangeControlSetBottom);
         behavior.setControlSetsVertical(rangeControlSetLeft, rangeControlSetRight);
-        behavior.createAxisConverter();
         
         setHorizontalRangeControls(control);
         setVerticalRangeControls(control);

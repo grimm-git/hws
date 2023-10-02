@@ -55,8 +55,9 @@ public class LocalDateRangeConverterTest
         RangeControlSet ctrlSet = TestHelper.createRangeControlSet();
         
         // Range: 1.1.2022 - 31.12.2022
-        LocalDateRangeConverter instance = new LocalDateRangeConverter(axis, dataList);
+        LocalDateRangeConverter instance = new LocalDateRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
 
         axis.setLowerBound(LocalDate.of(2022, 12, 31));
         assertEquals(100, ctrlSet.getLowerLimit());
@@ -85,8 +86,9 @@ public class LocalDateRangeConverterTest
         RangeControlSet ctrlSet = TestHelper.createRangeControlSet();
         
         // Range: 1.1.2022 - 31.12.2022
-        LocalDateRangeConverter instance = new LocalDateRangeConverter(axis, dataList);
+        LocalDateRangeConverter instance = new LocalDateRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
 
         axis.setUpperBound(LocalDate.of(2022, 12, 31));
         assertEquals(100, ctrlSet.getUpperLimit());
@@ -115,8 +117,9 @@ public class LocalDateRangeConverterTest
         RangeControlSet ctrlSet = TestHelper.createRangeControlSet();
 
         // Data range: 1.1.2022 - 31.12.2022 but axis boundaries 1.1.2022 - 31.12.2022
-        LocalDateRangeConverter instance = new LocalDateRangeConverter(axis, dataList);
+        LocalDateRangeConverter instance = new LocalDateRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
 
         ctrlSet.setLowerLimit(50);
         assertEquals(LocalDate.of(2022,7,2), axis.getLowerBound());
@@ -139,8 +142,9 @@ public class LocalDateRangeConverterTest
         RangeControlSet ctrlSet = TestHelper.createRangeControlSet();
 
         // Data range: 1.1.2022 - 31.12.2022 but axis boundaries 1.1.2022 - 31.12.2022
-        LocalDateRangeConverter instance = new LocalDateRangeConverter(axis, dataList);
+        LocalDateRangeConverter instance = new LocalDateRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
 
         ctrlSet.setUpperLimit(50);
         assertEquals(LocalDate.of(2022,7,2), axis.getUpperBound());
@@ -157,8 +161,9 @@ public class LocalDateRangeConverterTest
         RangeControlSet ctrlSet = TestHelper.createRangeControlSet();
 
         // Data range: 1.1.2022 - 31.12.2022 but axis boundaries 1.1.2022 - 31.12.2022
-        LocalDateRangeConverter instance = new LocalDateRangeConverter(axis, dataList);
+        LocalDateRangeConverter instance = new LocalDateRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
 
         LocalDate testDate = LocalDate.of(2021, 11, 1);
         LocalDate expected = LocalDate.of(2022, 1, 1);
@@ -182,7 +187,7 @@ public class LocalDateRangeConverterTest
         RangeControlSet ctrlSet = TestHelper.createRangeControlSet();
 
         // No data range but axis boundaries 1.1.2022 - 31.12.2022
-        LocalDateRangeConverter instance = new LocalDateRangeConverter(axis, dataList);
+        LocalDateRangeConverter instance = new LocalDateRangeConverter(axis);
         instance.link(ctrlSet);
         
         LocalDate testDate = LocalDate.of(2022, 3, 12);
@@ -208,7 +213,7 @@ public class LocalDateRangeConverterTest
         RangeControlSet ctrlSet = TestHelper.createRangeControlSet();
 
         // No data range and none from the axis boundaries -> default range: 1.1.<CY> - 31.12.<CY>
-        LocalDateRangeConverter instance = new LocalDateRangeConverter(axis, dataList);
+        LocalDateRangeConverter instance = new LocalDateRangeConverter(axis);
         instance.link(ctrlSet);
         
         LocalDate now = LocalDate.now();
@@ -236,8 +241,9 @@ public class LocalDateRangeConverterTest
         RangeControlSet ctrlSet = TestHelper.createRangeControlSet();
 
         // Data range: 12.3.2023 - 12.3.2023 but axis boundaries 1.1.2022 - 31.12.2022
-        LocalDateRangeConverter instance = new LocalDateRangeConverter(axis, dataList);
+        LocalDateRangeConverter instance = new LocalDateRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
 
         LocalDate expected = LocalDate.of(2022,3,12);
         LocalDate testDate = LocalDate.of(2022,3,12);

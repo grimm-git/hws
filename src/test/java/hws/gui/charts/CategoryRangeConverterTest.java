@@ -18,6 +18,7 @@ package hws.gui.charts;
 
 import hws.gui.charts.skins.RangeControlSet;
 import hws.testhelper.TestHelper;
+import static hws.testhelper.TestHelper.isEqual;
 import java.util.ArrayList;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -41,6 +42,111 @@ public class CategoryRangeConverterTest
     }
     
     @Test
+    public void testConversion_1()
+    {
+        ObservableList<String> dataList = FXCollections.observableArrayList();
+        dataList.add("Category 5");
+
+        CategoryAxis axis = new CategoryAxis();
+        CategoryRangeConverter instance = new CategoryRangeConverter(axis);
+        instance.updateData(dataList);
+
+        double[] results = {0};
+        for (int cat = 0; cat < dataList.size(); cat++) {
+            double value = instance.categoryToPercent(cat);
+            assertTrue(isEqual(value, results[cat], 0.0001));
+            assertEquals(cat, instance.percentToCategory(value));
+        }
+    }
+
+    @Test
+    public void testConversion_2()
+    {
+        ObservableList<String> dataList = FXCollections.observableArrayList();
+        dataList.add("Category 5");
+        dataList.add("Category 1");
+
+        CategoryAxis axis = new CategoryAxis();
+        CategoryRangeConverter instance = new CategoryRangeConverter(axis);
+        instance.updateData(dataList);
+
+        double[] results = {0, 100};
+        for (int cat = 0; cat < dataList.size(); cat++) {
+            double value = instance.categoryToPercent(cat);
+            assertTrue(isEqual(value, results[cat], 0.0001));
+            assertEquals(cat, instance.percentToCategory(value));
+        }
+    }
+
+    @Test
+    public void testConversion_3()
+    {
+        ObservableList<String> dataList = FXCollections.observableArrayList();
+        dataList.add("Category 5");
+        dataList.add("Category 1");
+        dataList.add("Category 2");
+
+        CategoryAxis axis = new CategoryAxis();
+        CategoryRangeConverter instance = new CategoryRangeConverter(axis);
+        instance.updateData(dataList);
+
+        double[] results = {0, 50, 100};
+        for (int cat = 0; cat < dataList.size(); cat++) {
+            double value = instance.categoryToPercent(cat);
+            assertTrue(isEqual(value, results[cat], 0.0001));
+            assertEquals(cat, instance.percentToCategory(value));
+        }
+    }
+    
+    @Test
+    public void testConversion_4()
+    {
+        ObservableList<String> dataList = FXCollections.observableArrayList();
+        dataList.add("Category 5");
+        dataList.add("Category 1");
+        dataList.add("Category 2");
+        dataList.add("Category 4");
+
+        CategoryAxis axis = new CategoryAxis();
+        CategoryRangeConverter instance = new CategoryRangeConverter(axis);
+        instance.updateData(dataList);
+
+        double[] results = {0, 33.3333, 66.6666, 100};
+        for (int cat = 0; cat < dataList.size(); cat++) {
+            double value = instance.categoryToPercent(cat);
+            assertTrue(isEqual(value, results[cat], 0.0001));
+            assertEquals(cat, instance.percentToCategory(value));
+        }
+    }
+
+    @Test
+    public void testConversion_10()
+    {
+        ObservableList<String> dataList = FXCollections.observableArrayList();
+        dataList.add("Category 5");
+        dataList.add("Category 1");
+        dataList.add("Category 2");
+        dataList.add("Category 4");
+        dataList.add("Category 6");
+        dataList.add("Category 7");
+        dataList.add("Category 8");
+        dataList.add("Category 9");
+        dataList.add("Category 3");
+        dataList.add("Category 10");
+
+        CategoryAxis axis = new CategoryAxis();
+        CategoryRangeConverter instance = new CategoryRangeConverter(axis);
+        instance.updateData(dataList);
+
+        double[] results = {0, 11.1111, 22.2222, 33.3333, 44.4444, 55.5555, 66.6666, 77.7777, 88.8888, 100};
+        for (int cat = 0; cat < dataList.size(); cat++) {
+            double value = instance.categoryToPercent(cat);
+            assertTrue(isEqual(value, results[cat], 0.0001));
+            assertEquals(cat, instance.percentToCategory(value));
+        }
+    }
+
+    @Test
     public void testConversionToPercent_Lower()
     {
         ObservableList<String> dataList = FXCollections.observableArrayList();
@@ -61,8 +167,9 @@ public class CategoryRangeConverterTest
         axis.setCategories(dataList);
         RangeControlSet ctrlSet = TestHelper.createRangeControlSet();
         
-        CategoryRangeConverter instance = new CategoryRangeConverter(axis, dataList);
+        CategoryRangeConverter instance = new CategoryRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
 
         instance.setLowerBound(getIndex("Category 5"));
         assertEquals(0, instance.getLowerBound());
@@ -98,8 +205,9 @@ public class CategoryRangeConverterTest
         axis.setCategories(dataList);
         RangeControlSet ctrlSet = TestHelper.createRangeControlSet();
         
-        CategoryRangeConverter instance = new CategoryRangeConverter(axis, dataList);
+        CategoryRangeConverter instance = new CategoryRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
 
         instance.setUpperBound(getIndex("Category 5"));
         assertEquals(0, instance.getUpperBound());
@@ -135,9 +243,10 @@ public class CategoryRangeConverterTest
         axis.setCategories(dataList);
         RangeControlSet ctrlSet = TestHelper.createRangeControlSet();
         
-        CategoryRangeConverter instance = new CategoryRangeConverter(axis, dataList);
+        CategoryRangeConverter instance = new CategoryRangeConverter(axis);
         instance.link(ctrlSet);
-          
+        instance.updateData(dataList);
+
         ctrlSet.setLowerLimit(0);
         assertEquals(getIndex("Category 5"), instance.getLowerBound());
 
@@ -169,8 +278,9 @@ public class CategoryRangeConverterTest
         axis.setCategories(dataList);
         RangeControlSet ctrlSet = TestHelper.createRangeControlSet();
         
-        CategoryRangeConverter instance = new CategoryRangeConverter(axis, dataList);
+        CategoryRangeConverter instance = new CategoryRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
           
         ctrlSet.setUpperLimit(0);
         assertEquals(getIndex("Category 5"), instance.getUpperBound());
@@ -203,8 +313,9 @@ public class CategoryRangeConverterTest
         axis.setCategories(dataList);
         RangeControlSet ctrlSet = TestHelper.createRangeControlSet();
 
-        CategoryRangeConverter instance = new CategoryRangeConverter(axis, dataList);
+        CategoryRangeConverter instance = new CategoryRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
 
         instance.setLowerBound(10);
         assertEquals(getIndex("Category 9"), instance.getLowerBound());
@@ -224,7 +335,7 @@ public class CategoryRangeConverterTest
         axis.setCategories(dataList);
         RangeControlSet ctrlSet = TestHelper.createRangeControlSet();
 
-        CategoryRangeConverter instance = new CategoryRangeConverter(axis, dataList);
+        CategoryRangeConverter instance = new CategoryRangeConverter(axis);
         instance.link(ctrlSet);
         
         instance.setLowerBound(getIndex("Category 5"));
@@ -246,8 +357,9 @@ public class CategoryRangeConverterTest
         RangeControlSet ctrlSet = TestHelper.createRangeControlSet();
 
         // Range: "Category 1"
-        CategoryRangeConverter instance = new CategoryRangeConverter(axis, dataList);
+        CategoryRangeConverter instance = new CategoryRangeConverter(axis);
         instance.link(ctrlSet);
+        instance.updateData(dataList);
 
         instance.setLowerBound(getIndex("NotInList"));
         assertEquals(0, instance.getLowerBound());

@@ -283,7 +283,7 @@ extends Axis<LocalDate>
         List<LocalDate> tickDateList = new ArrayList<>();
 
         LocalDate lastTickDate = null; 
-        for (TickMark<LocalDate> tick : getTickMarks()) {
+        for (Axis.TickMark<LocalDate> tick : getTickMarks()) {
             lastTickDate = tick.getValue();
             LocalDate tickDate = tickInterval.normalizeToBegin(tick.getValue());
             tickDateList.add(tickDate);
@@ -402,7 +402,8 @@ extends Axis<LocalDate>
         QUARTERS(Period.ofMonths(3), "'Q'%d yy"),
         YEARS(Period.ofYears(1), "yyyy"),
         DECADE(Period.ofYears(10), "yyyy"),
-        HALFCENTURY(Period.ofYears(50), "yyyy");
+        SEMICENTURY(Period.ofYears(50), "yyyy"),
+        CENTURY(Period.ofYears(100), "yyyy");
         
         private Period period;
         private String format;
@@ -423,7 +424,8 @@ extends Axis<LocalDate>
             distances[3] = (spanInDays/90  - cntTicks) * (spanInDays/90  - cntTicks);
             distances[4] = (spanInDays/365 - cntTicks) * (spanInDays/365 - cntTicks);
             distances[5] = (spanInDays/3650 - cntTicks) * (spanInDays/3650 - cntTicks);
-            distances[5] = (spanInDays/365/50 - cntTicks) * (spanInDays/365/50 - cntTicks);
+            distances[6] = (spanInDays/18250 - cntTicks) * (spanInDays/18250 - cntTicks);
+            distances[7] = (spanInDays/36500 - cntTicks) * (spanInDays/36500 - cntTicks);
 
             int smalestDistanceIdx = 0;
             float temp = distances[0];
@@ -483,9 +485,13 @@ extends Axis<LocalDate>
                     int decade = date.getYear() / 10 * 10;
                     return LocalDate.of(decade, 1, 1);
                 }
-                case HALFCENTURY -> {
-                    int hcentury = date.getYear() / 50 * 50;
-                    return LocalDate.of(hcentury, 1, 1);
+                case SEMICENTURY -> {
+                    int semicentury = date.getYear() / 50 * 50;
+                    return LocalDate.of(semicentury, 1, 1);
+                }
+                case CENTURY -> {
+                    int century = date.getYear() / 100 * 100;
+                    return LocalDate.of(century, 1, 1);
                 }
                 default -> {
                     return date;
@@ -514,9 +520,13 @@ extends Axis<LocalDate>
                     int decade = date.getYear() / 10 * 10;
                     return LocalDate.of(decade+5, 7, 1);
                 }
-                case HALFCENTURY -> {
-                    int hcentury = date.getYear() / 50 * 50;
-                    return LocalDate.of(hcentury+25, 7, 1);
+                case SEMICENTURY -> {
+                    int semicentury = date.getYear() / 50 * 50;
+                    return LocalDate.of(semicentury+25, 7, 1);
+                }
+                case CENTURY -> {
+                    int century = date.getYear() / 100 * 100;
+                    return LocalDate.of(century+50, 7, 1);
                 }
                 default -> {
                     return date;
@@ -548,9 +558,13 @@ extends Axis<LocalDate>
                     int decade = date.getYear() / 10 * 10;
                     return LocalDate.of(decade+9, 12, 31);
                 }
-                case HALFCENTURY -> {
-                    int hcentury = date.getYear() / 50 * 50;
-                    return LocalDate.of(hcentury+49, 12, 31);
+                case SEMICENTURY -> {
+                    int semicentury = date.getYear() / 50 * 50;
+                    return LocalDate.of(semicentury+49, 12, 31);
+                }
+                case CENTURY -> {
+                    int century = date.getYear() / 100 * 100;
+                    return LocalDate.of(century+99, 12, 31);
                 }
                 default -> {
                     return date;

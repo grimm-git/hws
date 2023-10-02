@@ -18,7 +18,7 @@ package hws.gui.charts;
 
 import hws.gui.charts.skins.RangeControlSet;
 import java.util.ArrayList;
-import javafx.collections.ObservableList;
+import java.util.List;
 import javafx.scene.chart.Axis;
 
 
@@ -27,29 +27,37 @@ import javafx.scene.chart.Axis;
  * ScrollBars
  * <ul>
  * <li>One for cntrolling the upper limit of the axis
-*  <li>One for cntrolling the range (position and amount)
-*  <li>One for cntrolling the lowerr limit of the axis
+ * <li>One for cntrolling the range (position and amount)
+ * <li>One for cntrolling the lowerr limit of the axis
  * </ul>
  * The ScrollBars are all set in percent (0..100%) while the axis has its native data type<br>
  * The RangeConverter translates between both back and forth.
+ *
+ * @param <T>    Native Datatype of the axis
  * 
  * @author grimm
  */
-public abstract class RangeConverter
+public abstract class RangeConverter<T>
 {
     protected final ArrayList<RangeControlSet> listControlSets = new ArrayList<>();
-
+    
     /**
      * Constructor of the RangeConverter. This must be overloaded by the inherit class.<p>
      * For examle: If the axis is a x-axis so this list contains all x-values from the XYData
      * items from all series of the chart.
      * 
-     * @param <T>    Native Datatype of the axis
      * @param axis   Axis that should be linked with a range control set
-     * @param list   List of all data points from the Chart responsible for this axis.
      */
-    protected <T> RangeConverter(Axis<? extends T> axis, ObservableList<? extends T> list) {}
+    protected RangeConverter(Axis<? extends T> axis) { }
 
+    /**
+     * Inform the RangeConverter about the data values of the maintained axis. The range will
+     * automatically extracted from this list.
+     * 
+     * @param list  List of data values.
+     */
+    public abstract void updateData(List<T> list);
+    
     /**
      * Link a specific RangeControlSet to the axis maintained by this RangeConverter. It is
      * possible to link several control sets to the same axis. They all will be handled in

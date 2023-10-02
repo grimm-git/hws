@@ -21,52 +21,70 @@ import java.time.LocalDate;
 import static java.time.temporal.ChronoUnit.DAYS;
 import java.util.List;
 import javafx.beans.value.ChangeListener;
-import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
 
 /**
  *
  * @author grimm
  */
 public class LocalDateRangeConverter
-extends RangeConverter
+extends RangeConverter<LocalDate>
 {
     private LocalDateAxis axis;
     private LocalDate minRange;
     private LocalDate maxRange;
 
-    public LocalDateRangeConverter(LocalDateAxis axis, ObservableList<? extends LocalDate> data)
+    public LocalDateRangeConverter(LocalDateAxis axis)
     {
-        super(axis, data);
+        super(axis);
         this.axis = axis;
         
-        extractRange(axis, data);
+        if (axis.getLowerBound() != null && axis.getUpperBound() != null) {
+            minRange = axis.getLowerBound();
+            maxRange = axis.getUpperBound();
+        } else {
+            LocalDate now = LocalDate.now();
+            minRange = LocalDate.of(now.getYear(), 1, 1);   // Default:  1. 1.<current year>
+            maxRange = LocalDate.of(now.getYear(), 12, 31); //          31.12.<current year>
+        }
+        
         if (axis.isAutoRanging()) {
             axis.setAutoRanging(false);
-            axis.setUpperBound(maxRange);
             axis.setLowerBound(minRange);
+            axis.setUpperBound(maxRange);
         }
-
-        data.addListener((ListChangeListener.Change<? extends LocalDate> c) -> {
-                c.next();
-                for (LocalDate date : c.getAddedSubList()) {
-                    if (date.isBefore(minRange))
-                        minRange = date;
-                    if (date.isAfter(maxRange))
-                        maxRange = date;
-                }
-                for (LocalDate date : c.getRemoved()) {
-                    if (date.equals(minRange) || date.equals(maxRange)) {
-                        extractRange(axis, data);
-                        break;
-                    }
-                }
-            });
-
+        
         axis.upperBoundProperty().addListener(axisUpperBoundlistener);
         axis.lowerBoundProperty().addListener(axisLowerBoundlistener);
     }
-    
+     
+    @Override
+    public void updateData(List<LocalDate> list)
+    {
+        if (list.isEmpty()) {
+            minRange = axis.getLowerBound();   // Default range:  1. 1.<current year>
+            maxRange = axis.getUpperBound();   //                31.12.<current year>
+            
+        } else {
+            minRange = LocalDate.MAX;
+            maxRange = LocalDate.MIN;
+
+            for (LocalDate date : list) {
+                if (date.isBefore(minRange))
+                    minRange = date;
+                if (date.isAfter(maxRange))
+                    maxRange = date;
+            }
+        }
+        
+        if (axis.getUpperBound().isAfter(minRange) && axis.getLowerBound().isBefore(maxRange)) {
+            if (axis.getLowerBound().isBefore(minRange))  minRange = axis.getLowerBound();
+            if (axis.getUpperBound().isAfter(maxRange))   maxRange = axis.getUpperBound();
+        }
+
+        axis.setLowerBound(minRange);
+        axis.setUpperBound(maxRange);
+    }
+
     /**
      * Establish the binding of the converter.It links the input to the output and vice versa.
      * 
@@ -91,28 +109,43 @@ extends RangeConverter
         ChangeListener<Number> upperRangeLimitlistener = (obs, oVal, nVal) -> {
                 if (areEqual(oVal, nVal)) return;
 
+                System.err.printf("%s%d UpperRangeLimit (%f / %f)\n", " ".repeat(level), level, oVal.doubleValue(), nVal.doubleValue());
+                level += 1;
+
                 LocalDate date = percentToLocalDate(nVal.doubleValue());
                 axis.setUpperBound(date);                          // calls axisUpperBoundListener
 
                 double rangeLen = calcRangeLength(axis);
                 rangeCTRL.setRangeLengthAndPosition(rangeLen);     // calls rangePositionListener
+
+                level -= 1;
             };
 
         ChangeListener<Number> lowerRangeLimitlistener = (obs, oVal, nVal) -> {
                 if (areEqual(oVal, nVal)) return;
+
+                System.err.printf("%s%d LowerRangeLimit (%f / %f)\n", " ".repeat(level), level, oVal.doubleValue(), nVal.doubleValue());
+                level += 1;
 
                 LocalDate date = percentToLocalDate(nVal.doubleValue());
                 axis.setLowerBound(date);                          // calls axisLowerBoundListener
 
                 double rangeLen = calcRangeLength(axis);
                 rangeCTRL.setRangeLengthAndPosition(rangeLen);     // calls rangePositionListener
+
+                level -= 1;
             };
 
         ChangeListener<Number> rangePositionlistener = (obs, oVal, nVal) -> {
                 if (areEqual(oVal, nVal)) return;
 
+                System.err.printf("%s%d RangePosition (%f / %f)\n", " ".repeat(level), level, oVal.doubleValue(), nVal.doubleValue());
+                level += 1;
+
                 rangeCTRL.moveLimits(nVal.doubleValue());          // calls lowerRangeLimitListener
                                                                    // calls upperRangeLimitListener
+
+                level -= 1;
             };
 
         rangeCTRL.addUpperLimitListener(upperRangeLimitlistener);
@@ -124,36 +157,6 @@ extends RangeConverter
     {
         return 100.0 * DAYS.between(axis.getUpperBound(),axis.getLowerBound()) /
                        DAYS.between(maxRange, minRange);
-    }
-
-    private void extractRange(LocalDateAxis axis, List<? extends LocalDate> list)
-    {
-        if (axis.getLowerBound() == null || axis.getUpperBound() == null) {
-            LocalDate now = LocalDate.now();
-            axis.setLowerBound(LocalDate.of(now.getYear(), 1, 1));
-            axis.setUpperBound(LocalDate.of(now.getYear(), 12, 31));
-        }
-
-        if (list.isEmpty()) {
-            minRange = axis.getLowerBound();   // Default range:  1. 1.<current year>
-            maxRange = axis.getUpperBound();   //                31.12.<current year>
-            
-        } else {
-            minRange = LocalDate.MAX;
-            maxRange = LocalDate.MIN;
-
-            for (LocalDate date : list) {
-                if (date.isBefore(minRange))
-                    minRange = date;
-                if (date.isAfter(maxRange))
-                    maxRange = date;
-            }
-        }
-        
-        if (axis.getUpperBound().isAfter(minRange) && axis.getLowerBound().isBefore(maxRange)) {
-            if (axis.getLowerBound().isBefore(minRange))  minRange = axis.getLowerBound();
-            if (axis.getUpperBound().isAfter(maxRange))   maxRange = axis.getUpperBound();
-        }
     }
 
     private double localDateToPercent(LocalDate date)
@@ -172,7 +175,13 @@ extends RangeConverter
     /****************************************************************************************/
     /*                              Listener definitions                                    */    
     /****************************************************************************************/
+
+    int level = 0;
+
     private final ChangeListener<LocalDate> axisUpperBoundlistener = (obs, oVal, nVal) -> {
+            System.err.printf("%s%d UpperAxisBoundariy (%s / %s)\n", " ".repeat(level), level, oVal == null ? "null" : oVal.toString(), nVal.toString());
+            level += 1;
+
             double percent = localDateToPercent(nVal);
             LocalDate value = nVal;
 
@@ -194,9 +203,14 @@ extends RangeConverter
 
             for (RangeControlSet item : listControlSets)
                 item.setUpperLimit(percent);              // calls upperRangeLimitListener twice
+
+            level -= 1;
         };
             
     private final ChangeListener<LocalDate> axisLowerBoundlistener = (obs, oVal, nVal) -> {
+            System.err.printf("%s%d LowerAxisBoundariy (%s / %s)\n", " ".repeat(level), level, oVal == null ? "null" : oVal.toString(), nVal.toString());
+            level += 1;
+
             double percent = localDateToPercent(nVal);
             LocalDate value = nVal;
 
@@ -218,5 +232,7 @@ extends RangeConverter
 
             for (RangeControlSet item : listControlSets)
                 item.setLowerLimit(percent);              // calls lowerRangeLimitListener twice
+
+            level -= 1;
         };
 }

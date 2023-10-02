@@ -18,10 +18,10 @@ package hws.gui.charts;
 
 import hws.gui.charts.skins.RangeControlSet;
 import java.util.ArrayList;
+import java.util.List;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
-import javafx.collections.ObservableList;
 import javafx.scene.chart.CategoryAxis;
 
 /**
@@ -29,31 +29,34 @@ import javafx.scene.chart.CategoryAxis;
  * @author grimm
  */
 public class CategoryRangeConverter
-extends RangeConverter
+extends RangeConverter<String>
 {
     private CategoryAxis axis;
     private final ArrayList<String> categoryList = new ArrayList<>();
     private final IntegerProperty upperBoundProperty = new SimpleIntegerProperty();
     private final IntegerProperty lowerBoundProperty = new SimpleIntegerProperty();
-    private boolean rangeMoveInProgress = false;
     
-    public CategoryRangeConverter(CategoryAxis axis, ObservableList<? extends String> list)
+    public CategoryRangeConverter(CategoryAxis axis)
     {
-        super(axis, list);
+        super(axis);
         this.axis = axis;
         
-        categoryList.clear();
-        categoryList.addAll(list);
-        lowerBoundProperty.set(0);
-        upperBoundProperty.set(categoryList.size() - 1);
-       
-        if (axis.isAutoRanging()) {
+        if (axis.isAutoRanging())
             axis.setAutoRanging(false);
-            axis.getCategories().setAll(categoryList);
-        }
-        
+
         upperBoundProperty.addListener(axisUpperBoundlistener);
         lowerBoundProperty.addListener(axisLowerBoundlistener);
+    }
+  
+    @Override
+    public void updateData(List<String> list)
+    {
+        categoryList.clear();
+        categoryList.addAll(list);
+        axis.getCategories().setAll(categoryList);
+
+        lowerBoundProperty.set(0);
+        upperBoundProperty.set(list.isEmpty() ? 0 : categoryList.size() - 1);
     }
 
     @Override
@@ -62,44 +65,69 @@ extends RangeConverter
         registerControlSet(rangeCTRL);
 
         // set initial values
-        rangeCTRL.setUpperLimit(categoryToPercent(getUpperBound()));
-        rangeCTRL.setLowerLimit(categoryToPercent(getLowerBound()));
-            
-        // set initial range length and position
-        double rangeLength = calcRangeLength(axis);
-        rangeCTRL.setRangeLengthAndPosition(rangeLength);
+        if (categoryList.isEmpty()) {
+            rangeCTRL.setUpperLimit(100);
+            rangeCTRL.setLowerLimit(0);
+            rangeCTRL.setRangeLengthAndPosition(100);
+        } else {
+            rangeCTRL.setUpperLimit(categoryToPercent(getUpperBound()));
+            rangeCTRL.setLowerLimit(categoryToPercent(getLowerBound()));
+            rangeCTRL.setRangeLengthAndPosition(calcRangeLength());
+        }
 
         ChangeListener<Number> upperRangeLimitlistener = (obs, oVal, nVal) -> {
                 if (areEqual(oVal, nVal)) return;
 
-                int category = percentToCategory(nVal.doubleValue());
-                setUpperBound(category);                           // calls axisUpperBoundListener
+                System.err.printf("%s%d UpperRangeLimit (%f / %f)\n", " ".repeat(level), level, oVal.doubleValue(), nVal.doubleValue());
+                level += 1;
 
-                if (!rangeMoveInProgress) {
-                    double rangeLen = calcRangeLength(axis);
-                    rangeCTRL.setRangeLengthAndPosition(rangeLen); // calls rangePositionListener
+                int category = percentToCategory(nVal.doubleValue());
+                if (category < getLowerBound())
+                    rangeCTRL.setUpperLimit(oVal.doubleValue());
+                
+                else if (category != getUpperBound()) {
+                    setUpperBound(category);             // calls axisUpperBoundListener
+                    double rangeLen = calcRangeLength();
+                    rangeCTRL.setRangeLengthAndPosition(calcRangePosition(), rangeLen);
                 }
+
+                level -= 1;
             };
 
         ChangeListener<Number> lowerRangeLimitlistener = (obs, oVal, nVal) -> {
                 if (areEqual(oVal, nVal)) return;
 
-                int category = percentToCategory(nVal.doubleValue());
-                setLowerBound(category);                           // calls axisLowerBoundListener
+                System.err.printf("%s%d LowerRangeLimit (%f / %f)\n", " ".repeat(level), level, oVal.doubleValue(), nVal.doubleValue());
+                level += 1;
 
-                if (!rangeMoveInProgress) {
-                    double rangeLen = calcRangeLength(axis);
-                    rangeCTRL.setRangeLengthAndPosition(rangeLen); // calls rangePositionListener
+                int category = percentToCategory(nVal.doubleValue());
+                if (category > getUpperBound())
+                    rangeCTRL.setLowerLimit(oVal.doubleValue());
+                
+                else if (category != getLowerBound()) {
+                    setLowerBound(category);              // calls axisLowerBoundListener
+                    double rangeLen = calcRangeLength();
+                    rangeCTRL.setRangeLengthAndPosition(calcRangePosition(), rangeLen);
                 }
+
+                level -= 1;
             };
 
         ChangeListener<Number> rangePositionlistener = (obs, oVal, nVal) -> {
                 if (areEqual(oVal, nVal)) return;
+               
+                System.err.printf("%s%d RangePosition (%f / %f)\n", " ".repeat(level), level, oVal.doubleValue(), nVal.doubleValue());
+                level += 1;
+
+                int diff = getUpperBound() - getLowerBound();
+                double lowLimit = (100.0 - calcRangeLength())/100 * nVal.doubleValue();
+                int lowBound = (int) Math.round(lowLimit / 100.0 * (categoryList.size()));
+                int upBound = lowBound + diff;
                 
-                rangeMoveInProgress = true;
-                rangeCTRL.moveLimits(nVal.doubleValue());          // calls lowerRangeLimitListener
-                                                                   // calls upperRangeLimitListener
-                rangeMoveInProgress = false;
+                setLowerBound(lowBound);
+                setUpperBound(upBound);
+                
+                level -= 1;
             };
 
         rangeCTRL.addUpperLimitListener(upperRangeLimitlistener);
@@ -107,22 +135,36 @@ extends RangeConverter
         rangeCTRL.addRangeListener(rangePositionlistener);
     }
 
-    private double calcRangeLength(CategoryAxis axis)
+    double calcRangeLength()
     {
         return 100.0 * axis.getCategories().size() / categoryList.size();
     }
-
-    private double categoryToPercent(int idx)
+    
+    double calcRangePosition()
     {
-        int range = categoryList.size() - 1;
-        
-        return range == 0 ? 0 : 100.0 * idx / range;
+        int max = categoryList.size()-1;
+        if (getLowerBound() == 0) return 0;
+        if (getUpperBound() == max) return 100;
+
+        double offs = getLowerBound() + (getUpperBound() - getLowerBound())/2.0;
+        return 100.0 * offs / max;
+    }
+    
+    double categoryToPercent(int idx)
+    {
+        if (idx == 0) return 0;
+        if (idx == categoryList.size()-1) return 100;
+
+        double step = 100.0 / (categoryList.size()-1);
+        return idx * step;
     }
 
-    private int percentToCategory(double percent)
+    int percentToCategory(double percent)
     {
-        int range = categoryList.size() - 1;
-        return (int) Math.round(percent/100 * range);
+        if (categoryList.size() <= 1) return 0;
+        
+        double step = 100.0 / (categoryList.size()-1);
+        return (int) Math.round(percent / step);
     }
 
     int getUpperBound()
@@ -157,29 +199,30 @@ extends RangeConverter
     /****************************************************************************************/
     /*                              Listener definitions                                    */    
     /****************************************************************************************/
-    private final ChangeListener<? super Number> axisUpperBoundlistener = (obs, oVal, nVal) -> {
-            double percent = categoryToPercent(nVal.intValue());
-            if (getUpperBound() < getLowerBound()) {
-                percent = categoryToPercent(getLowerBound());
-                setUpperBound(getLowerBound());      // calls axisUpperBoundListener
-            }
 
+    int level = 0;
+
+    private final ChangeListener<? super Number> axisUpperBoundlistener = (obs, oVal, nVal) -> {
+            System.err.printf("%s%d UpperAxisBoundariy (%s / %s)\n", " ".repeat(level), level, oVal, nVal);
+            level += 1;
+
+            double percent = categoryToPercent(nVal.intValue());
             for (RangeControlSet item : listControlSets)
                 item.setUpperLimit(percent);              // calls upperRangeLimitListener twice
 
             axis.getCategories().setAll(categoryList.subList(getLowerBound(), getUpperBound() + 1));
+            level -= 1;
         };
             
     private final ChangeListener<? super Number> axisLowerBoundlistener = (obs, oVal, nVal) -> {
-            double percent = categoryToPercent(nVal.intValue());
-            if (getLowerBound() > getUpperBound()) {
-                percent = categoryToPercent(getUpperBound());
-                setLowerBound(getUpperBound());           // calls axisLowerBoundListener
-            }
+            System.err.printf("%s%d LowerAxisBoundariy (%s / %s)\n", " ".repeat(level), level, oVal, nVal);
+            level += 1;
 
+            double percent = categoryToPercent(nVal.intValue());
             for (RangeControlSet item : listControlSets)
                 item.setLowerLimit(percent);              // calls lowerRangeLimitListener twice
 
             axis.getCategories().setAll(categoryList.subList(getLowerBound(), getUpperBound() + 1));
+            level -= 1;
         };
 }
